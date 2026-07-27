@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jadwal Tugas Offline</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Chart.js untuk Grafik -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest" defer></script>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 md:p-6 text-gray-800 font-sans">
+  
+  <div class="max-w-7xl mx-auto">
+    
+    <!-- Online/Offline Status Bar -->
+    <div id="status-bar" class="mb-4 rounded-lg shadow-md p-4 flex items-center justify-between bg-green-100 border-l-4 border-green-500">
+      <div class="flex items-center gap-3">
+        <i data-lucide="wifi" id="status-icon" class="w-5 h-5 text-green-600"></i>
+        <span id="status-text" class="font-semibold text-green-800">Online</span>
+      </div>
+      <div class="flex gap-2">
+        <button id="btn-install" class="hidden items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 text-sm font-semibold transition">
+          <i data-lucide="download" class="w-4 h-4"></i> Pasang Aplikasi
+        </button>
+        <button id="btn-export" class="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm font-semibold transition">
+          <i data-lucide="download" class="w-4 h-4"></i> Backup Data
+        </button>
+      </div>
+    </div>
+
+    <!-- Header -->
+    <div class="mb-8">
+      <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
+        <div class="flex items-center gap-3">
+          <i data-lucide="calendar" class="w-8 h-8 text-indigo-600"></i>
+          <h1 class="text-3xl md:text-4xl font-bold">Jadwal Tugas Offline</h1>
+        </div>
+        <div id="display-date" class="text-sm text-gray-600 font-semibold bg-white px-4 py-2 rounded-lg">
+          <!-- Tanggal akan diisi oleh JS -->
+        </div>
+      </div>
+      <p class="text-gray-600">📱 Berfungsi 100% offline • 💾 Data tersimpan di perangkat Anda</p>
+    </div>
+
+    <!-- Date Navigator -->
+    <div class="bg-white rounded-lg shadow-md p-4 mb-8 flex items-center justify-between gap-2 flex-wrap">
+      <button id="btn-prev-date" class="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 font-semibold transition text-sm md:text-base">
+        &larr; Kemarin
+      </button>
+      <input type="date" id="input-date" class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+      <button id="btn-next-date" class="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 font-semibold transition text-sm md:text-base">
+        Besok &rarr;
+      </button>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      <div class="bg-white rounded-lg shadow-lg p-4 md:p-6 border-l-4 border-blue-500">
+        <p class="text-gray-600 text-xs md:text-sm font-semibold">TOTAL TUGAS</p>
+        <p id="stat-total" class="text-2xl md:text-3xl font-bold text-blue-600 mt-2">0</p>
+      </div>
+      <div class="bg-white rounded-lg shadow-lg p-4 md:p-6 border-l-4 border-green-500">
+        <p class="text-gray-600 text-xs md:text-sm font-semibold">SELESAI HARI INI</p>
+        <p id="stat-completed" class="text-2xl md:text-3xl font-bold text-green-600 mt-2">0</p>
+      </div>
+      <div class="bg-white rounded-lg shadow-lg p-4 md:p-6 border-l-4 border-purple-500">
+        <p class="text-gray-600 text-xs md:text-sm font-semibold">RATA-RATA 30 HARI</p>
+        <p id="stat-average" class="text-2xl md:text-3xl font-bold text-purple-600 mt-2">0%</p>
+      </div>
+      <div class="bg-white rounded-lg shadow-lg p-4 md:p-6 border-l-4 border-red-500 flex items-center gap-2">
+        <i data-lucide="flame" class="w-8 h-8 text-red-500"></i>
+        <div>
+          <p class="text-gray-600 text-xs md:text-sm font-semibold">STREAK</p>
+          <p id="stat-streak" class="text-2xl md:text-3xl font-bold text-red-600 mt-1">0</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 30-Day Progress Chart -->
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+      <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+        <i data-lucide="trending-up" class="w-5 h-5 text-indigo-600"></i> Grafik Performa 30 Hari
+      </h2>
+      <div class="w-full h-64 md:h-80 relative">
+        <canvas id="performanceChart"></canvas>
+      </div>
+      <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+        <div class="bg-blue-50 rounded-lg p-3">
+          <p class="text-gray-600 text-sm">Hari Sempurna</p>
+          <p id="chart-perfect" class="text-2xl font-bold text-blue-600">0</p>
+        </div>
+        <div class="bg-indigo-50 rounded-lg p-3">
+          <p class="text-gray-600 text-sm">Hari Aktif</p>
+          <p id="chart-active" class="text-2xl font-bold text-indigo-600">0</p>
+        </div>
+        <div class="bg-purple-50 rounded-lg p-3">
+          <p class="text-gray-600 text-sm">Rata-rata</p>
+          <p id="chart-average" class="text-2xl font-bold text-purple-600">0%</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Category Stats -->
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+      <h2 class="text-xl font-bold text-gray-800 mb-4">Statistik Kategori Hari Ini</h2>
+      <div id="category-container" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+
+    <!-- Add New Task -->
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+      <h2 class="text-xl font-bold text-gray-800 mb-4">Tambah Tugas Baru</h2>
+      <div class="flex flex-col md:flex-row gap-3">
+        <input type="text" id="new-task-title" placeholder="Nama tugas..." class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        <input type="time" id="new-task-time" class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        <select id="new-task-category" class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <option value="Kerja">Kerja</option>
+          <option value="Kesehatan">Kesehatan</option>
+          <option value="Personal">Personal</option>
+          <option value="Keluarga">Keluarga</option>
+          <option value="Belajar">Belajar</option>
+          <option value="Istirahat">Istirahat</option>
+        </select>
+        <button id="btn-add-task" class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 flex items-center justify-center gap-2 font-semibold transition whitespace-nowrap">
+          <i data-lucide="plus" class="w-5 h-5"></i> Tambah
+        </button>
+      </div>
+    </div>
+
+    <!-- Task List -->
+    <div id="task-list" class="space-y-3 mb-8">
+      <!-- Rendered by JS -->
+    </div>
+
+    <!-- Motivational Message -->
+    <div id="motivation-message"></div>
+
+  </div>
+
+  <script>
+    // --- State Variables ---
+    let currentDate = new Date();
+    let selectedDate = new Date().toISOString().split('T')[0];
+    let tasks = [];
+    let dailyHistory = [];
+    let chartInstance = null;
+    let deferredPrompt = null;
+
+    const categories = ['Kerja', 'Kesehatan', 'Personal', 'Keluarga', 'Belajar', 'Istirahat'];
+    const categoryColors = {
+      'Kerja': 'bg-blue-100 text-blue-800 border-blue-300',
+      'Kesehatan': 'bg-green-100 text-green-800 border-green-300',
+      'Personal': 'bg-purple-100 text-purple-800 border-purple-300',
+      'Keluarga': 'bg-pink-100 text-pink-800 border-pink-300',
+      'Belajar': 'bg-yellow-100 text-yellow-800 border-yellow-300',
+      'Istirahat': 'bg-indigo-100 text-indigo-800 border-indigo-300'
+    };
+
+    // --- DOM Elements ---
+    const inputDate = document.getElementById('input-date');
+    const displayDate = document.getElementById('display-date');
+    const taskList = document.getElementById('task-list');
+    const categoryContainer = document.getElementById('category-container');
+    const motivationMessage = document.getElementById('motivation-message');
+
+    // --- Initialization ---
+    function initApp() {
+      // Tunggu Lucide library selesai loading
+      if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+      }
+      initNetworkStatus();
+      initPWA();
+      loadData();
+      
+      // Event Listeners
+      inputDate.addEventListener('change', (e) => {
+        selectedDate = e.target.value;
+        currentDate = new Date(selectedDate);
+        loadData();
+      });
+      document.getElementById('btn-prev-date').addEventListener('click', () => changeDate(-1));
+      document.getElementById('btn-next-date').addEventListener('click', () => changeDate(1));
+      document.getElementById('btn-add-task').addEventListener('click', addTask);
+      document.getElementById('new-task-title').addEventListener('keypress', (e) => {
+        if(e.key === 'Enter') addTask();
+      });
+      document.getElementById('btn-export').addEventListener('click', exportData);
+    }
+
+    // Jalankan app setelah DOM dan Lucide selesai loading
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initApp);
+    } else {
+      initApp();
+    }
+
+    // Fallback: jalankan jika Lucide belum loaded
+    if (typeof lucide === 'undefined') {
+      setTimeout(() => {
+        if (typeof lucide !== 'undefined') {
+          lucide.createIcons();
+        }
+      }, 500);
+    }
+
+    // --- Network & PWA ---
+    function initNetworkStatus() {
+      const updateStatus = () => {
+        const isOnline = navigator.onLine;
+        const bar = document.getElementById('status-bar');
+        const icon = document.getElementById('status-icon');
+        const text = document.getElementById('status-text');
+
+        if (isOnline) {
+          bar.className = "mb-4 rounded-lg shadow-md p-4 flex items-center justify-between bg-green-100 border-l-4 border-green-500";
+          text.textContent = "Online";
+          text.className = "font-semibold text-green-800";
+          icon.setAttribute('data-lucide', 'wifi');
+          icon.className = "w-5 h-5 text-green-600";
+        } else {
+          bar.className = "mb-4 rounded-lg shadow-md p-4 flex items-center justify-between bg-orange-100 border-l-4 border-orange-500";
+          text.textContent = "Offline - Semua data tersimpan lokal";
+          text.className = "font-semibold text-orange-800";
+          icon.setAttribute('data-lucide', 'wifi-off');
+          icon.className = "w-5 h-5 text-orange-600";
+        }
+        if (typeof lucide !== 'undefined') {
+          lucide.createIcons();
+        }
+      };
+      window.addEventListener('online', updateStatus);
+      window.addEventListener('offline', updateStatus);
+      updateStatus();
+    }
+
+    function initPWA() {
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        const btnInstall = document.getElementById('btn-install');
+        btnInstall.classList.remove('hidden');
+        btnInstall.classList.add('flex');
+        
+        btnInstall.addEventListener('click', async () => {
+          deferredPrompt.prompt();
+          const { outcome } = await deferredPrompt.userChoice;
+          console.log(`User response: ${outcome}`);
+          deferredPrompt = null;
+          btnInstall.classList.add('hidden');
+          btnInstall.classList.remove('flex');
+        });
+      });
+    }
+
+    // --- Data Logic ---
+    function loadData() {
+      inputDate.value = selectedDate;
+      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      displayDate.textContent = new Date(selectedDate).toLocaleDateString('id-ID', options);
+
+      const tasksKey = `tasks:${selectedDate}`;
+      const savedTasks = localStorage.getItem(tasksKey);
+      
+      if (savedTasks) {
+        tasks = JSON.parse(savedTasks);
+      } else {
+        tasks = [
+          { id: 1, title: 'Sarapan sehat', time: '07:00', completed: false, category: 'Kesehatan' },
+          { id: 2, title: 'Olahraga pagi', time: '07:30', completed: false, category: 'Kesehatan' },
+          { id: 3, title: 'Mandi & siap-siap', time: '08:00', completed: false, category: 'Personal' },
+          { id: 4, title: 'Buka email penting', time: '09:00', completed: false, category: 'Kerja' },
+          { id: 5, title: 'Jam produktif 1', time: '09:30', completed: false, category: 'Kerja' },
+          { id: 6, title: 'Meeting tim', time: '11:00', completed: false, category: 'Kerja' },
+          { id: 7, title: 'Istirahat & makan siang', time: '12:30', completed: false, category: 'Istirahat' },
+          { id: 8, title: 'Jam produktif 2', time: '14:00', completed: false, category: 'Kerja' },
+          { id: 9, title: 'Review hasil kerja', time: '16:00', completed: false, category: 'Kerja' },
+          { id: 10, title: 'Makan malam keluarga', time: '18:30', completed: false, category: 'Keluarga' },
+          { id: 11, title: 'Belajar/Pengembangan', time: '19:30', completed: false, category: 'Belajar' },
+          { id: 12, title: 'Relaksasi & tidur awal', time: '21:30', completed: false, category: 'Istirahat' }
+        ];
+        saveTasks();
+      }
+
+      const savedHistory = localStorage.getItem('daily-history');
+      if (savedHistory) {
+        dailyHistory = JSON.parse(savedHistory);
+      }
+
+      renderAll();
+    }
+
+    function saveTasks() {
+      localStorage.setItem(`tasks:${selectedDate}`, JSON.stringify(tasks));
+    }
+
+    function updateDailyHistory() {
+      const completed = tasks.filter(t => t.completed).length;
+      const total = tasks.length;
+      const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+      const filtered = dailyHistory.filter(d => d.date !== selectedDate);
+      dailyHistory = [...filtered, { date: selectedDate, percentage, completed, total }].slice(-30);
+      localStorage.setItem('daily-history', JSON.stringify(dailyHistory));
+    }
+
+    function changeDate(days) {
+      const newDate = new Date(selectedDate);
+      newDate.setDate(newDate.getDate() + days);
+      selectedDate = newDate.toISOString().split('T')[0];
+      currentDate = newDate;
+      loadData();
+    }
+
+    // --- Actions ---
+    function addTask() {
+      const titleInput = document.getElementById('new-task-title');
+      const timeInput = document.getElementById('new-task-time');
+      const categoryInput = document.getElementById('new-task-category');
+
+      if (titleInput.value.trim() && timeInput.value.trim()) {
+        const newTask = {
+          id: Date.now(),
+          title: titleInput.value,
+          time: timeInput.value,
+          completed: false,
+          category: categoryInput.value
+        };
+        tasks.push(newTask);
+        tasks.sort((a, b) => a.time.localeCompare(b.time));
+        
+        saveTasks();
+        updateDailyHistory();
+        renderAll();
+
+        titleInput.value = '';
+        timeInput.value = '';
+      }
+    }
+
+    window.toggleTask = function(id) {
+      tasks = tasks.map(task => task.id === id ? { ...task, completed: !task.completed } : task);
+      saveTasks();
+      updateDailyHistory();
+      renderAll();
+    }
+
+    window.deleteTask = function(id) {
+      tasks = tasks.filter(task => task.id !== id);
+      saveTasks();
+      updateDailyHistory();
+      renderAll();
+    }
+
+    function exportData() {
+      const allData = {
+        tasks: Object.fromEntries(
+          Object.keys(localStorage)
+            .filter(key => key.startsWith('tasks:'))
+            .map(key => [key, JSON.parse(localStorage.getItem(key))])
+        ),
+        history: JSON.parse(localStorage.getItem('daily-history') || '[]'),
+        exportDate: new Date().toISOString()
+      };
+
+      const dataStr = JSON.stringify(allData, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(dataBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `jadwal-tugas-backup-${new Date().toISOString().split('T')[0]}.json`;
+      link.click();
+    }
+
+    // --- Rendering ---
+    function renderAll() {
+      renderStats();
+      renderTasks();
+      renderCategories();
+      renderChart();
+      if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+      }
+    }
+
+    function renderStats() {
+      const completedCount = tasks.filter(t => t.completed).length;
+      const totalTasks = tasks.length;
+      const completionPercentage = totalTasks > 0 ? Math.round((completedCount / totalTasks) * 100) : 0;
+
+      document.getElementById('stat-total').textContent = totalTasks;
+      document.getElementById('stat-completed').textContent = completedCount;
+
+      // Calculate 30 days data
+      const chartData = [];
+      for (let i = 29; i >= 0; i--) {
+        const d = new Date(new Date().toISOString().split('T')[0]);
+        d.setDate(d.getDate() - i);
+        const dateStr = d.toISOString().split('T')[0];
+        const dayData = dailyHistory.find(h => h.date === dateStr);
+        
+        chartData.push({
+          date: dateStr,
+          day: d.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric' }),
+          percentage: dayData ? dayData.percentage : 0,
+          total: dayData ? dayData.total : 0
+        });
+      }
+
+      const validDays = chartData.filter(d => d.total > 0);
+      const averagePercentage = validDays.length > 0 
+        ? Math.round(validDays.reduce((sum, d) => sum + d.percentage, 0) / validDays.length) 
+        : 0;
+      
+      document.getElementById('stat-average').textContent = `${averagePercentage}%`;
+      document.getElementById('chart-average').textContent = `${averagePercentage}%`;
+      document.getElementById('chart-active').textContent = validDays.length;
+      document.getElementById('chart-perfect').textContent = chartData.filter(d => d.percentage === 100).length;
+
+      // Calculate Streak
+      let currentStreak = 0;
+      for (let i = chartData.length - 1; i >= 0; i--) {
+        if (chartData[i].percentage === 100) currentStreak++;
+        else break;
+      }
+      document.getElementById('stat-streak').textContent = currentStreak;
+
+      // Motivational Message
+      motivationMessage.innerHTML = '';
+      if (completionPercentage === 100 && totalTasks > 0) {
+        motivationMessage.innerHTML = `
+          <div class="bg-green-100 border-2 border-green-500 rounded-lg p-6 text-center">
+            <p class="text-xl md:text-2xl font-bold text-green-700">🎉 Selamat! Anda telah menyelesaikan semua tugas hari ini!</p>
+          </div>`;
+      } else if (completionPercentage > 0) {
+        motivationMessage.innerHTML = `
+          <div class="bg-blue-100 border-2 border-blue-500 rounded-lg p-6 text-center">
+            <p class="text-lg font-semibold text-blue-700">💪 Terus semangat! Anda sudah ${completionPercentage}% menyelesaikan target hari ini</p>
+          </div>`;
+      }
+    }
+
+    function renderTasks() {
+      if (tasks.length === 0) {
+        taskList.innerHTML = `
+          <div class="bg-white rounded-lg shadow-md p-8 text-center">
+            <p class="text-gray-500 text-lg">Tidak ada tugas untuk hari ini. Mulai tambahkan tugas!</p>
+          </div>`;
+        return;
+      }
+
+      taskList.innerHTML = tasks.map(task => `
+        <div class="bg-white rounded-lg shadow-md p-4 flex items-center gap-4 transition hover:shadow-lg ${task.completed ? 'opacity-60' : ''}">
+          <button onclick="toggleTask(${task.id})" class="flex-shrink-0 focus:outline-none">
+            ${task.completed 
+              ? '<i data-lucide="check-circle-2" class="w-6 h-6 text-green-500"></i>' 
+              : '<i data-lucide="circle" class="w-6 h-6 text-gray-400 hover:text-indigo-500"></i>'}
+          </button>
+          
+          <div class="flex-1">
+            <p class="font-semibold ${task.completed ? 'line-through text-gray-500' : 'text-gray-800'}">${task.title}</p>
+            <div class="flex items-center gap-3 mt-1 flex-wrap">
+              <span class="text-sm text-gray-500 font-mono">${task.time}</span>
+              <span class="text-xs px-3 py-1 rounded-full font-medium border ${categoryColors[task.category] || 'bg-gray-100 text-gray-800'}">
+                ${task.category}
+              </span>
+            </div>
+          </div>
+
+          <button onclick="deleteTask(${task.id})" class="flex-shrink-0 text-red-500 hover:text-red-700 focus:outline-none transition">
+            <i data-lucide="trash-2" class="w-5 h-5"></i>
+          </button>
+        </div>
+      `).join('');
+    }
+
+    function renderCategories() {
+      const stats = categories.map(cat => ({
+        name: cat,
+        total: tasks.filter(t => t.category === cat).length,
+        completed: tasks.filter(t => t.category === cat && t.completed).length
+      }));
+
+      categoryContainer.innerHTML = stats.map(stat => {
+        const percent = stat.total > 0 ? (stat.completed / stat.total) * 100 : 0;
+        return `
+          <div class="text-center p-4 bg-gray-50 rounded-lg hover:shadow-md transition">
+            <p class="text-sm font-semibold text-gray-700">${stat.name}</p>
+            <p class="text-2xl font-bold text-indigo-600 my-2">${stat.completed}/${stat.total}</p>
+            <div class="w-full bg-gray-300 rounded-full h-2">
+              <div class="bg-indigo-500 h-2 rounded-full transition-all duration-300" style="width: ${percent}%"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderChart() {
+      const chartData = [];
+      const labels = [];
+      const dataPoints = [];
+
+      for (let i = 29; i >= 0; i--) {
+        const d = new Date(new Date().toISOString().split('T')[0]);
+        d.setDate(d.getDate() - i);
+        const dateStr = d.toISOString().split('T')[0];
+        const dayData = dailyHistory.find(h => h.date === dateStr);
+        
+        labels.push(d.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric' }));
+        dataPoints.push(dayData ? dayData.percentage : 0);
+      }
+
+      const ctx = document.getElementById('performanceChart').getContext('2d');
+      
+      if (chartInstance) {
+        chartInstance.destroy();
+      }
+
+      chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Persentase Selesai (%)',
+            data: dataPoints,
+            borderColor: '#4f46e5',
+            backgroundColor: 'rgba(79, 70, 229, 0.1)',
+            borderWidth: 2,
+            pointBackgroundColor: '#4f46e5',
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            fill: true,
+            tension: 0.3
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              max: 100,
+              title: { display: true, text: 'Persentase (%)' }
+            },
+            x: {
+              ticks: { maxRotation: 45, minRotation: 45 }
+            }
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (context) => ` ${context.parsed.y}%`
+              }
+            }
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>
