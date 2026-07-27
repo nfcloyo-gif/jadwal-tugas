@@ -12,7 +12,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   
   <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest" defer></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 md:p-6 text-gray-800 font-sans">
   
@@ -171,11 +171,8 @@
     const motivationMessage = document.getElementById('motivation-message');
 
     // --- Initialization ---
-    function initApp() {
-      // Tunggu Lucide library selesai loading
-      if (typeof lucide !== 'undefined') {
-        lucide.createIcons();
-      }
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
       initNetworkStatus();
       initPWA();
       loadData();
@@ -193,23 +190,7 @@
         if(e.key === 'Enter') addTask();
       });
       document.getElementById('btn-export').addEventListener('click', exportData);
-    }
-
-    // Jalankan app setelah DOM dan Lucide selesai loading
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initApp);
-    } else {
-      initApp();
-    }
-
-    // Fallback: jalankan jika Lucide belum loaded
-    if (typeof lucide === 'undefined') {
-      setTimeout(() => {
-        if (typeof lucide !== 'undefined') {
-          lucide.createIcons();
-        }
-      }, 500);
-    }
+    });
 
     // --- Network & PWA ---
     function initNetworkStatus() {
@@ -232,9 +213,7 @@
           icon.setAttribute('data-lucide', 'wifi-off');
           icon.className = "w-5 h-5 text-orange-600";
         }
-        if (typeof lucide !== 'undefined') {
-          lucide.createIcons();
-        }
+        lucide.createIcons();
       };
       window.addEventListener('online', updateStatus);
       window.addEventListener('offline', updateStatus);
@@ -385,9 +364,7 @@
       renderTasks();
       renderCategories();
       renderChart();
-      if (typeof lucide !== 'undefined') {
-        lucide.createIcons();
-      }
+      lucide.createIcons();
     }
 
     function renderStats() {
@@ -398,7 +375,6 @@
       document.getElementById('stat-total').textContent = totalTasks;
       document.getElementById('stat-completed').textContent = completedCount;
 
-      // Calculate 30 days data
       const chartData = [];
       for (let i = 29; i >= 0; i--) {
         const d = new Date(new Date().toISOString().split('T')[0]);
@@ -424,7 +400,6 @@
       document.getElementById('chart-active').textContent = validDays.length;
       document.getElementById('chart-perfect').textContent = chartData.filter(d => d.percentage === 100).length;
 
-      // Calculate Streak
       let currentStreak = 0;
       for (let i = chartData.length - 1; i >= 0; i--) {
         if (chartData[i].percentage === 100) currentStreak++;
@@ -432,7 +407,6 @@
       }
       document.getElementById('stat-streak').textContent = currentStreak;
 
-      // Motivational Message
       motivationMessage.innerHTML = '';
       if (completionPercentage === 100 && totalTasks > 0) {
         motivationMessage.innerHTML = `
@@ -474,7 +448,7 @@
             </div>
           </div>
 
-          <button onclick="deleteTask(${task.id})" class="flex-shrink-0 text-red-500 hover:text-red-700 focus:outline-none transition">
+          <button onclick="deleteTask(${task.id})" class="text-red-500 hover:text-red-700 transition focus:outline-none">
             <i data-lucide="trash-2" class="w-5 h-5"></i>
           </button>
         </div>
@@ -482,30 +456,31 @@
     }
 
     function renderCategories() {
-      const stats = categories.map(cat => ({
-        name: cat,
-        total: tasks.filter(t => t.category === cat).length,
-        completed: tasks.filter(t => t.category === cat && t.completed).length
-      }));
+      const categoryStats = categories.map(cat => {
+        const catTasks = tasks.filter(t => t.category === cat);
+        const total = catTasks.length;
+        const completed = catTasks.filter(t => t.completed).length;
+        return { cat, total, completed };
+      }).filter(stat => stat.total > 0);
 
-      categoryContainer.innerHTML = stats.map(stat => {
-        const percent = stat.total > 0 ? (stat.completed / stat.total) * 100 : 0;
-        return `
-          <div class="text-center p-4 bg-gray-50 rounded-lg hover:shadow-md transition">
-            <p class="text-sm font-semibold text-gray-700">${stat.name}</p>
-            <p class="text-2xl font-bold text-indigo-600 my-2">${stat.completed}/${stat.total}</p>
-            <div class="w-full bg-gray-300 rounded-full h-2">
-              <div class="bg-indigo-500 h-2 rounded-full transition-all duration-300" style="width: ${percent}%"></div>
-            </div>
-          </div>
-        `;
-      }).join('');
+      if(categoryStats.length === 0) {
+        categoryContainer.innerHTML = '<p class="text-gray-500 text-sm col-span-full">Belum ada data kategori untuk hari ini.</p>';
+        return;
+      }
+
+      categoryContainer.innerHTML = categoryStats.map(stat => `
+        <div class="border rounded-lg p-3 text-center ${categoryColors[stat.cat]}">
+          <p class="font-bold text-sm">${stat.cat}</p>
+          <p class="text-xl font-bold mt-1">${stat.completed}/${stat.total}</p>
+        </div>
+      `).join('');
     }
 
     function renderChart() {
-      const chartData = [];
+      const ctx = document.getElementById('performanceChart').getContext('2d');
+      
       const labels = [];
-      const dataPoints = [];
+      const data = [];
 
       for (let i = 29; i >= 0; i--) {
         const d = new Date(new Date().toISOString().split('T')[0]);
@@ -513,12 +488,10 @@
         const dateStr = d.toISOString().split('T')[0];
         const dayData = dailyHistory.find(h => h.date === dateStr);
         
-        labels.push(d.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric' }));
-        dataPoints.push(dayData ? dayData.percentage : 0);
+        labels.push(d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }));
+        data.push(dayData ? dayData.percentage : 0);
       }
 
-      const ctx = document.getElementById('performanceChart').getContext('2d');
-      
       if (chartInstance) {
         chartInstance.destroy();
       }
@@ -528,16 +501,13 @@
         data: {
           labels: labels,
           datasets: [{
-            label: 'Persentase Selesai (%)',
-            data: dataPoints,
+            label: 'Penyelesaian Tugas (%)',
+            data: data,
             borderColor: '#4f46e5',
             backgroundColor: 'rgba(79, 70, 229, 0.1)',
             borderWidth: 2,
-            pointBackgroundColor: '#4f46e5',
-            pointRadius: 4,
-            pointHoverRadius: 6,
             fill: true,
-            tension: 0.3
+            tension: 0.4
           }]
         },
         options: {
@@ -546,38 +516,23 @@
           scales: {
             y: {
               beginAtZero: true,
-              max: 100,
-              title: { display: true, text: 'Persentase (%)' }
-            },
-            x: {
-              ticks: { maxRotation: 45, minRotation: 45 }
-            }
-          },
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              callbacks: {
-                label: (context) => ` ${context.parsed.y}%`
-              }
+              max: 100
             }
           }
         }
       });
     }
-    <script>
-  // Mendaftarkan Service Worker agar bisa offline
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/sw.js')
-        .then((reg) => {
-          console.log('Service Worker berhasil didaftarkan: ', reg.scope);
-        })
-        .catch((err) => {
-          console.log('Pendaftaran Service Worker gagal: ', err);
-        });
-    });
-  }
-</script>
+  </script>
+
+  <!-- Script untuk Service Worker (Offline Mode) -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then((reg) => console.log('Service Worker berhasil terdaftar: ', reg.scope))
+          .catch((err) => console.log('Pendaftaran Service Worker gagal: ', err));
+      });
+    }
   </script>
 </body>
 </html>
