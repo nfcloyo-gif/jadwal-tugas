@@ -1,77 +1,43 @@
 {
+  "id": "jadwal-tugas-offline-app",
   "name": "Jadwal Tugas 30 Hari - Offline",
   "short_name": "Jadwal Tugas",
-  "description": "Aplikasi jadwal tugas harian dengan tracking 30 hari. Berfungsi 100% offline tanpa perlu koneksi internet.",
-  "start_url": "/",
+  "description": "Aplikasi jadwal tugas harian dengan tracking 30 hari. Berfungsi offline.",
+  "start_url": "./",
   "display": "standalone",
-  "scope": "/",
+  "display_override": ["window-controls-overlay", "standalone"],
+  "scope": "./",
+  "lang": "id",
+  "dir": "ltr",
   "theme_color": "#4f46e5",
   "background_color": "#ffffff",
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%234f46e5' width='192' height='192'/><text x='50%' y='50%' font-size='80' font-weight='bold' fill='white' text-anchor='middle' dominant-baseline='middle'>📅</text></svg>",
+      "src": "icon-192.png",
       "sizes": "192x192",
-      "type": "image/svg+xml",
-      "purpose": "any"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect fill='%234f46e5' width='512' height='512'/><text x='50%' y='50%' font-size='280' font-weight='bold' fill='white' text-anchor='middle' dominant-baseline='middle'>📅</text></svg>",
+      "src": "icon-512.png",
       "sizes": "512x512",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%234f46e5' width='192' height='192'/><text x='50%' y='50%' font-size='80' font-weight='bold' fill='white' text-anchor='middle' dominant-baseline='middle'>📅</text></svg>",
-      "sizes": "192x192",
-      "type": "image/svg+xml",
-      "purpose": "maskable"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ],
-  "categories": ["productivity", "lifestyle"],
   "screenshots": [
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 540 720'><rect fill='%23f0f4ff' width='540' height='720'/><text x='270' y='100' font-size='48' font-weight='bold' fill='%234f46e5' text-anchor='middle'>Jadwal Tugas</text><text x='270' y='200' font-size='24' fill='%23666' text-anchor='middle'>Kelola produktivitas Anda</text></svg>",
-      "sizes": "540x720",
-      "type": "image/svg+xml",
+      "src": "screenshot-mobile.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
       "form_factor": "narrow"
-    }
-  ],
-  "shortcuts": [
-    {
-      "name": "Lihat Tugas Hari Ini",
-      "short_name": "Tugas Hari Ini",
-      "description": "Lihat tugas yang harus diselesaikan hari ini",
-      "url": "/?date=today",
-      "icons": [
-        {
-          "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%234f46e5' width='192' height='192'/><text x='50%' y='50%' font-size='80' fill='white' text-anchor='middle' dominant-baseline='middle'>✓</text></svg>",
-          "sizes": "192x192",
-          "type": "image/svg+xml"
-        }
-      ]
     },
     {
-      "name": "Tambah Tugas Baru",
-      "short_name": "Tugas Baru",
-      "description": "Tambahkan tugas baru ke jadwal Anda",
-      "url": "/?action=add",
-      "icons": [
-        {
-          "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%234f46e5' width='192' height='192'/><text x='50%' y='50%' font-size='80' fill='white' text-anchor='middle' dominant-baseline='middle'>+</text></svg>",
-          "sizes": "192x192",
-          "type": "image/svg+xml"
-        }
-      ]
+      "src": "screenshot-desktop.png",
+      "sizes": "1920x1080",
+      "type": "image/png",
+      "form_factor": "wide"
     }
-  ],
-  "share_target": {
-    "action": "/share",
-    "method": "POST",
-    "enctype": "multipart/form-data",
-    "params": {
-      "title": "title",
-      "text": "text"
-    }
-  }
+  ]
 }
