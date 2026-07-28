@@ -1,9 +1,9 @@
 // Versi Service Worker
-const CACHE_VERSION = 'jadwal-tugas-v1';
+const CACHE_VERSION = 'jadwal-tugas-v2';
 const CACHE_URLS = [
-  '/',
-  '/index.html',
-  '/favicon.ico',
+  './',
+  './index.html',
+  './manifest.json'
 ];
 
 // Install event - cache resources
@@ -14,7 +14,6 @@ self.addEventListener('install', (event) => {
       console.log('Caching app shell');
       return cache.addAll(CACHE_URLS).catch(err => {
         console.log('Cache addAll error:', err);
-        // Lanjutkan meskipun ada error, karena app akan berfungsi offline dengan localStorage
       });
     })
   );
@@ -41,54 +40,28 @@ self.addEventListener('activate', (event) => {
 
 // Fetch event - serve from cache, fall back to network
 self.addEventListener('fetch', (event) => {
-  // Skip non-GET requests
   if (event.request.method !== 'GET') {
     return;
   }
 
-  // Handle API requests differently
-  if (event.request.url.includes('/api/')) {
-    event.respondWith(
-      fetch(event.request)
-        .then((response) => {
-          // Cache successful API responses
-          if (response.ok) {
-            const responseToCache = response.clone();
-            caches.open(CACHE_VERSION).then((cache) => {
-              cache.put(event.request, responseToCache);
-            });
-          }
-          return response;
-        })
-        .catch(() => {
-          // Return cached response if network fails
-          return caches.match(event.request);
-        })
-    );
-  } else {
-    // For other requests, try network first, then cache
-    event.respondWith(
-      fetch(event.request)
-        .then((response) => {
-          // Cache successful responses
-          if (response.ok) {
-            const responseToCache = response.clone();
-            caches.open(CACHE_VERSION).then((cache) => {
-              cache.put(event.request, responseToCache);
-            });
-          }
-          return response;
-        })
-        .catch(() => {
-          // Return cached response or offline page
-          return caches.match(event.request)
-            .then((response) => response || new Response('Offline - App berfungsi dengan data lokal'));
-        })
-    );
-  }
+  event.respondWith(
+    fetch(event.request)
+      .then((response) => {
+        if (response.ok) {
+          const responseToCache = response.clone();
+          caches.open(CACHE_VERSION).then((cache) => {
+            cache.put(event.request, responseToCache);
+          });
+        }
+        return response;
+      })
+      .catch(() => {
+        return caches.match(event.request)
+          .then((response) => response || new Response('Offline - App berfungsi dengan data lokal'));
+      })
+  );
 });
 
-// Handle messages from client
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
