@@ -245,29 +245,33 @@
 
     // --- Data Logic ---
     function loadData() {
+        function loadData() {
       inputDate.value = selectedDate;
       const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-      displayDate.textContent = new Date(selectedDate).toLocaleDateString('id-ID', options);
+      displayDate.textContent = Date(selectedDate).toLocaleDateString('id-ID', options);
 
       const tasksKey = `tasks:${selectedDate}`;
       const savedTasks = localStorage.getItem(tasksKey);
       
+      // Jika sudah ada data di hari itu, gunakan data yang tersimpan
       if (savedTasks) {
         tasks = JSON.parse(savedTasks);
       } else {
+        // JIKA KOSONG, GUNAKAN TEMPLATE JADWAL BARU INI
         tasks = [
-          { id: 1, title: 'Sarapan sehat', time: '07:00', completed: false, category: 'Kesehatan' },
-          { id: 2, title: 'Olahraga pagi', time: '07:30', completed: false, category: 'Kesehatan' },
-          { id: 3, title: 'Mandi & siap-siap', time: '08:00', completed: false, category: 'Personal' },
-          { id: 4, title: 'Buka email penting', time: '09:00', completed: false, category: 'Kerja' },
-          { id: 5, title: 'Jam produktif 1', time: '09:30', completed: false, category: 'Kerja' },
-          { id: 6, title: 'Meeting tim', time: '11:00', completed: false, category: 'Kerja' },
-          { id: 7, title: 'Istirahat & makan siang', time: '12:30', completed: false, category: 'Istirahat' },
-          { id: 8, title: 'Jam produktif 2', time: '14:00', completed: false, category: 'Kerja' },
-          { id: 9, title: 'Review hasil kerja', time: '16:00', completed: false, category: 'Kerja' },
-          { id: 10, title: 'Makan malam keluarga', time: '18:30', completed: false, category: 'Keluarga' },
-          { id: 11, title: 'Belajar/Pengembangan', time: '19:30', completed: false, category: 'Belajar' },
-          { id: 12, title: 'Relaksasi & tidur awal', time: '21:30', completed: false, category: 'Istirahat' }
+          { id: 1, title: 'Bangun pagi', time: '03:00', completed: false, category: 'Istirahat' },
+          { id: 2, title: 'Membaca buku', time: '03:05', completed: false, category: 'Belajar' },
+          { id: 3, title: 'Olahraga Pagi', time: '05:00', completed: false, category: 'Kesehatan' },
+          { id: 4, title: 'Kuliah', time: '07:30', completed: false, category: 'Belajar' },
+          { id: 5, title: 'Mengerjakan Tugas', time: '14:00', completed: false, category: 'Belajar' },
+          { id: 6, title: 'Istirahat', time: '15:00', completed: false, category: 'Istirahat' },
+          { id: 7, title: 'Olahraga sore', time: '15:30', completed: false, category: 'Kesehatan' },
+          { id: 8, title: 'Istirahat', time: '16:45', completed: false, category: 'Istirahat' },
+          { id: 9, title: 'Belajar', time: '18:00', completed: false, category: 'Belajar' },
+          { id: 10, title: 'Trading', time: '19:15', completed: false, category: 'Kerja' },
+          { id: 11, title: 'Jurnal harian', time: '22:15', completed: false, category: 'Personal' },
+          { id: 12, title: 'Jurnal Trading', time: '22:15', completed: false, category: 'Kerja' },
+          { id: 13, title: 'Istirahat Tidur', time: '22:30', completed: false, category: 'Istirahat' }
         ];
         saveTasks();
       }
@@ -279,6 +283,7 @@
 
       renderAll();
     }
+
 
     function saveTasks() {
       localStorage.setItem(`tasks:${selectedDate}`, JSON.stringify(tasks));
