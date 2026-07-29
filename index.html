@@ -256,19 +256,19 @@
         tasks = JSON.parse(savedTasks);
       } else {
         tasks = [
-          { id: 1, title: 'Bangun pagi', time: '03:00', completed: false, category: 'Kesehatan' },
-          { id: 2, title: 'Membaca Buku', time: '03:10', completed: false, category: 'Belajar' },
+          { id: 1, title: 'Bangun pagi', time: '03:00', completed: false, category: 'Istirahat' },
+          { id: 2, title: 'Membaca buku', time: '03:05', completed: false, category: 'Belajar' },
           { id: 3, title: 'Olahraga Pagi', time: '05:00', completed: false, category: 'Kesehatan' },
           { id: 4, title: 'Kuliah', time: '07:30', completed: false, category: 'Belajar' },
           { id: 5, title: 'Mengerjakan Tugas', time: '14:00', completed: false, category: 'Belajar' },
           { id: 6, title: 'Istirahat', time: '15:00', completed: false, category: 'Istirahat' },
-          { id: 7, title: 'Olahraga Sore', time: '15:30', completed: false, category: 'Kesehatan' },
-          { id: 8, title: 'Istirahat', time: '17:00', completed: false, category: 'Istirahat' },
+          { id: 7, title: 'Olahraga sore', time: '15:30', completed: false, category: 'Kesehatan' },
+          { id: 8, title: 'Istirahat', time: '16:45', completed: false, category: 'Istirahat' },
           { id: 9, title: 'Belajar', time: '18:00', completed: false, category: 'Belajar' },
-          { id: 10, title: 'Trading', time: '19:00', completed: false, category: 'Kerja' },
-          { id: 11, title: 'Jurnaling', time: '22:10', completed: false, category: 'Personal' },
-          { id: 12, title: 'Jurnal Trading', time: '22:10', completed: false, category: 'Kerja' }
-          { id: 13, title: 'Tidur', time: '22:30', completed: false, category: 'Istirahat' }
+          { id: 10, title: 'Trading', time: '19:15', completed: false, category: 'Kerja' },
+          { id: 11, title: 'Jurnal harian', time: '22:15', completed: false, category: 'Personal' },
+          { id: 12, title: 'Jurnal Trading', time: '22:15', completed: false, category: 'Kerja' },
+          { id: 13, title: 'Istirahat Tidur', time: '22:30', completed: false, category: 'Istirahat' }
         ];
         saveTasks();
       }
@@ -453,4 +453,91 @@
             </div>
           </div>
 
-          <bu
+          <button onclick="deleteTask(${task.id})" class="text-red-500 hover:text-red-700 transition focus:outline-none">
+            <i data-lucide="trash-2" class="w-5 h-5"></i>
+          </button>
+        </div>
+      `).join('');
+    }
+
+    function renderCategories() {
+      const categoryStats = categories.map(cat => {
+        const catTasks = tasks.filter(t => t.category === cat);
+        const total = catTasks.length;
+        const completed = catTasks.filter(t => t.completed).length;
+        return { cat, total, completed };
+      }).filter(stat => stat.total > 0);
+
+      if(categoryStats.length === 0) {
+        categoryContainer.innerHTML = '<p class="text-gray-500 text-sm col-span-full">Belum ada data kategori untuk hari ini.</p>';
+        return;
+      }
+
+      categoryContainer.innerHTML = categoryStats.map(stat => `
+        <div class="border rounded-lg p-3 text-center ${categoryColors[stat.cat]}">
+          <p class="font-bold text-sm">${stat.cat}</p>
+          <p class="text-xl font-bold mt-1">${stat.completed}/${stat.total}</p>
+        </div>
+      `).join('');
+    }
+
+    function renderChart() {
+      const ctx = document.getElementById('performanceChart').getContext('2d');
+      
+      const labels = [];
+      const data = [];
+
+      for (let i = 29; i >= 0; i--) {
+        const d = new Date(new Date().toISOString().split('T')[0]);
+        d.setDate(d.getDate() - i);
+        const dateStr = d.toISOString().split('T')[0];
+        const dayData = dailyHistory.find(h => h.date === dateStr);
+        
+        labels.push(d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }));
+        data.push(dayData ? dayData.percentage : 0);
+      }
+
+      if (chartInstance) {
+        chartInstance.destroy();
+      }
+
+      chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Penyelesaian Tugas (%)',
+            data: data,
+            borderColor: '#4f46e5',
+            backgroundColor: 'rgba(79, 70, 229, 0.1)',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              max: 100
+            }
+          }
+        }
+      });
+    }
+  </script>
+
+  <!-- Script untuk Service Worker (Offline Mode) dengan path relatif -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then((reg) => console.log('Service Worker berhasil terdaftar: ', reg.scope))
+          .catch((err) => console.log('Pendaftaran Service Worker gagal: ', err));
+      });
+    }
+  </script>
+</body>
+</html>
