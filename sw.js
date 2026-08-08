@@ -1,69 +1,54 @@
-// Versi Service Worker
-const CACHE_VERSION = 'jadwal-tugas-v2';
-const CACHE_URLS = [
+const CACHE_NAME = 'jadwal-jurnal-v3';
+
+// Daftar file inti yang dicache di awal
+const CORE_ASSETS = [
   './',
   './index.html',
   './manifest.json'
 ];
 
-// Install event - cache resources
-self.addEventListener('install', (event) => {
-  console.log('Service Worker installing...');
+self.addEventListener('install', event => {
+  self.skipWaiting(); // Langsung aktifkan versi terbaru
   event.waitUntil(
-    caches.open(CACHE_VERSION).then((cache) => {
-      console.log('Caching app shell');
-      return cache.addAll(CACHE_URLS).catch(err => {
-        console.log('Cache addAll error:', err);
+    caches.open(CACHE_NAME).then(cache => {
+      // Teknik "Satu per satu": Jika satu file gagal di-cache, file lain tetap aman
+      CORE_ASSETS.forEach(url => {
+        cache.add(url).catch(err => console.log("Gagal cache:", url));
       });
     })
   );
-  self.skipWaiting();
 });
 
-// Activate event - clean up old caches
-self.addEventListener('activate', (event) => {
-  console.log('Service Worker activating...');
+self.addEventListener('activate', event => {
+  // Membersihkan cache versi lama
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
+    caches.keys().then(cacheNames => {
       return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_VERSION) {
-            console.log('Deleting old cache:', cacheName);
-            return caches.delete(cacheName);
-          }
-        })
+        cacheNames.filter(name => name !== CACHE_NAME).map(name => caches.delete(name))
       );
     })
   );
   self.clients.claim();
 });
 
-// Fetch event - serve from cache, fall back to network
-self.addEventListener('fetch', (event) => {
-  if (event.request.method !== 'GET') {
-    return;
-  }
+// Strategi: "Network First, lalu Fallback ke Cache"
+self.addEventListener('fetch', event => {
+  // Hanya memproses request pengambilan data (GET)
+  if (event.request.method !== 'GET') return;
 
   event.respondWith(
     fetch(event.request)
-      .then((response) => {
-        if (response.ok) {
-          const responseToCache = response.clone();
-          caches.open(CACHE_VERSION).then((cache) => {
-            cache.put(event.request, responseToCache);
-          });
-        }
+      .then(response => {
+        // Jika sedang online dan file berhasil dipanggil, simpan ke memori offline (Cache)
+        const responseClone = response.clone();
+        caches.open(CACHE_NAME).then(cache => {
+          cache.put(event.request, responseClone);
+        });
         return response;
       })
       .catch(() => {
-        return caches.match(event.request)
-          .then((response) => response || new Response('Offline - App berfungsi dengan data lokal'));
+        // Jika OFFLINE (internet mati), otomatis ambil file dari dalam memori HP
+        return caches.match(event.request);
       })
   );
-});
-
-self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
-  }
 });
